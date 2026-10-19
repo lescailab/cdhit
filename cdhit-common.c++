@@ -244,6 +244,7 @@ bool Options::SetOptionCommon( const char *flag, const char *value )
 	else if (strcmp(flag, "-U") == 0) unmatch_len = intval;
 	else if (strcmp(flag, "-tmp" ) == 0) temp_dir  = value;
 	else if (strcmp(flag, "-bak" ) == 0) backupFile  = intval;
+	else if (strcmp(flag, "-det" ) == 0) deterministic = intval;
 	else if (strcmp(flag, "-T" ) == 0){
 #ifndef NO_OPENMP
 		int cpu = omp_get_num_procs();
@@ -3128,7 +3129,10 @@ void SequenceDB::DoClustering( int T, const Options & options )
 			#pragma omp parallel for schedule( dynamic, 1 )
 			for(int j=m-1; j<N; j++){
 				#pragma omp flush (stop)
-				if( ! stop ){
+				// -det: the shared stop flag is set by whichever thread gets there first, so an
+				// iteration already handed out could be skipped; the table-building iteration must
+				// always run, and other iterations are skipped by their own length bound instead.
+				if( options.deterministic || ! stop ){
 					if( j+1 == N ) may_stop = 1;
 					if( j == (m0-1) ){ // use m0 to avoid other iterations satisfying the condition:
 						int tid = omp_get_thread_num();
@@ -3138,7 +3142,9 @@ void SequenceDB::DoClustering( int T, const Options & options )
 							if (seq->state & IS_REDUNDANT) continue;
 							ClusterOne( seq, ks, word_table, params[tid], buffers[tid], options );
 							if ( options.store_disk && (seq->state & IS_REDUNDANT) ) seq->SwapOut();
-							if( may_stop and word_table.sequences.size() >= 100 ) break;
+							// may_stop depends on how far the other threads have got, which makes the
+							// table boundary (and so -g 0 cluster assignment) vary from run to run.
+							if( ! options.deterministic and may_stop and word_table.sequences.size() >= 100 ) break;
 							if( word_table.size >= max_items ) break;
 							int tmax = max_seqs - (frag_size ? seq->size / frag_size + 1 : 0);
 							if( word_table.sequences.size() >= tmax ) break;
@@ -3147,6 +3153,7 @@ void SequenceDB::DoClustering( int T, const Options & options )
 					}else{
 						Sequence *seq = sequences[j];
 						if (seq->state & IS_REDUNDANT) continue;
+						if( options.deterministic && min > upper_bound_length_rep( seq->size, options ) ) continue;
 						if ( options.store_disk ){
 							#pragma omp critical
 							seq->SwapIn();
@@ -3370,7 +3377,12 @@ int SequenceDB::CheckOneAA( Sequence *seq, WordTable & table, WorkingParam & par
 			if (distance >= seq->distance) continue; // existing distance
 		}else{
 			if (tiden_pc < options.cluster_thd) continue;
-			if (tiden_pc <= seq->identity) continue; // existing iden_no
+			if (tiden_pc <= seq->identity){ // existing iden_no
+				// -det: break identity ties by lowest cluster_id, as CheckOneEST already does,
+				// so the result does not depend on which word table a representative landed in.
+				if( not ( options.deterministic and fabs(tiden_pc - seq->identity) < 1E-9
+							and rep->cluster_id < seq->cluster_id ) ) continue;
+			}
 		}
 		if (aln_cover_flag) {
 			if ( talign_info[3]-talign_info[2]+1 < min_aln_lenL) continue;

@@ -299,6 +299,7 @@ struct Options
 	bool    useIdentity;
 	bool    useDistance;
 	bool    backupFile;
+	bool    deterministic; // -det: timing-independent table boundaries in multi-threaded clustering
 
 	string  input;
 	string  input_pe;
@@ -312,6 +313,7 @@ struct Options
 
 	Options(){
 		backupFile = false;
+		deterministic = false;
 		useIdentity = false;
 		useDistance = false;
 		has2D = false;

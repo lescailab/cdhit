@@ -131,6 +131,10 @@ char txt_option_r[] =
 \tif set to 0, only +/+ strand alignment\n";
 char txt_option_bak[] =
 "\twrite backup cluster file (1 or 0, default 0)\n";
+char txt_option_det[] =
+"\treproducible multi-threaded clustering (1 or 0, default 0)\n \
+\tif set to 1, output does not depend on thread timing for a fixed -T;\n \
+\twith -g 1, output is also the same for any -T\n";
 char txt_option_sc[] =
 "\tsort clusters by size (number of sequences), default 0, output clusters by decreasing length\n \
 \tif set to 1, output clusters by decreasing size\n";
@@ -178,6 +182,7 @@ int print_usage (char *arg) {
   cout << "   -sc"<< txt_option_sc;
   cout << "   -sf"<< txt_option_sf;
   cout << "   -bak" << txt_option_bak;
+  cout << "   -det" << txt_option_det;
   cout << "   -h\tprint this help\n\n";
   cout << contacts;
   cout << "   " << cd_hit_ref1 << "\n";
@@ -266,6 +271,7 @@ int print_usage_est (char *arg) {
   cout << "   -gap" << txt_option_gap;
   cout << "   -gap-ext" << txt_option_gap_ext;
   cout << "   -bak" << txt_option_bak;
+  cout << "   -det" << txt_option_det;
   cout << "   -sc"<< txt_option_sc;
   cout << "   -sf"<< txt_option_sf;
   cout << "   -h\tprint this help\n\n";
