@@ -1,0 +1,43 @@
+{% set version = "4.8.1" %}
+{% set commit = "61418a477442ebdc08614876545a246ce40cb189" %}
+
+package:
+  name: cd-hit
+  version: {{ version }}
+
+source:
+  url: https://github.com/lescailab/cdhit/archive/{{ commit }}.tar.gz
+  sha256: 1ab3ce8203ed8b40890b84bc0c52046b646d480a45e9c14693887f49220d9788
+
+build:
+  number: 0
+  # The "reproducible" prefix tells this build apart from the bioconda cd-hit 4.8.1 builds.
+  string: reproducible_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+    - {{ stdlib('c') }}
+    - make
+  host:
+    - zlib
+    - llvm-openmp  # [osx]
+  run:
+    - llvm-openmp  # [osx]
+    # make install also ships the clstr_*.pl and other helper scripts.
+    - perl
+
+test:
+  files:
+    - run_test.sh
+
+about:
+  home: https://github.com/lescailab/cdhit
+  license: GPL-2.0-only
+  license_file: license.txt
+  summary: CD-HIT clustering with the -det option for reproducible multi-threaded runs
+  description: |
+    CD-HIT 4.8.1 built from the reproducible branch of lescailab/cdhit.
+    With -det 1, multi-threaded clustering output does not depend on thread
+    timing for a fixed -T; with -det 1 -g 1 the output is the same for any -T.
+  dev_url: https://github.com/lescailab/cdhit/tree/reproducible
